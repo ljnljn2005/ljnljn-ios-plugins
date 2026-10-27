@@ -47,6 +47,15 @@ pub fn photos_recent_searches(run: &Run) -> Result<()> {
     )
 }
 
+pub fn bluetooth_registry(run: &Run) -> Result<()> {
+    evidence(
+        run,
+        "ios_bluetooth_reg",
+        &["**/com.apple.MobileBluetooth.devices.plist"],
+        bluetooth_devices,
+    )
+}
+
 fn evidence(
     run: &Run,
     artifact: &str,
@@ -240,8 +249,69 @@ fn recent_searches(plist: &PlistValue) -> Vec<Row> {
         .collect()
 }
 
-fn photos_searches(plist: &PlistValue) -> Vec<Row> {
-    let Some(items) = plist.as_array() else {
+fn bluetooth_devices(plist: &PlistValue) -> Vec<Row> {
+    let Some(dict) = plist.as_dictionary() else {
+        return Vec::new();
+    };
+    dict.iter()
+        .filter_map(|(mac, value)| {
+            let entry = value.as_dictionary()?;
+            let text = |key: &str| {
+                entry
+                    .get(key)
+                    .and_then(PlistValue::as_string)
+                    .unwrap_or("")
+                    .to_owned()
+            };
+            let name = text("Name");
+            let default_name = text("DefaultName");
+            let title = if !name.is_empty() {
+                name.clone()
+            } else if !default_name.is_empty() {
+                default_name.clone()
+            } else {
+                mac.clone()
+            };
+            let last_seen = entry
+                .get("LastSeenTime")
+                .and_then(plist_integer)
+                .map(Timestamp::from_unix);
+            Some(Row {
+                key: mac.clone(),
+                title,
+                time: last_seen,
+                data: vec![
+                    ("mac".to_owned(), Value::from(mac.as_str())),
+                    ("name".to_owned(), Value::from(name.as_str())),
+                    (
+                        "default_name".to_owned(),
+                        Value::from(default_name.as_str()),
+                    ),
+                    (
+                        "user_name_key".to_owned(),
+                        Value::from(text("UserNameKey").as_str()),
+                    ),
+                    (
+                        "device_product".to_owned(),
+                        Value::from(text("DeviceIdProduct").as_str()),
+                    ),
+                ],
+            })
+        })
+        .collect()
+}
+
+fn plist_integer(value: &PlistValue) -> Option<i64> {
+    match value {
+        PlistValue::Integer(integer) => integer
+            .as_signed()
+            .or_else(|| integer.as_unsigned().map(|value| value as i64)),
+        PlistValue::Real(real) => Some(real.round() as i64),
+        _ => None,
+    }
+}
+
+fn photos_searches(plist: &PlistValue) -> Vec<Row> {    let Some(items) = plist.as_array() else {
         return Vec::new();
     };
     items

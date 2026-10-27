@@ -954,6 +954,194 @@ pub static IOS_SAFARI_WEBSEARCH: SqlSpec = SqlSpec {
     }],
 };
 
+static INTERACTIONC: &[SqlVariant] = &[
+    SqlVariant {
+        required_tables: &["zinteractions", "zcontacts"],
+        sql: r#"
+SELECT i.z_pk AS interaction_id, i.zstartdate AS start_date, i.zenddate AS end_date,
+       i.zbundleid AS bundle_id, c.zdisplayname AS contact_name,
+       c.zidentifier AS contact_id, i.zdirection AS direction,
+       i.zisresponse AS is_response, i.zrecipientcount AS recipient_count,
+       i.zcreationdate AS creation_date, i.zcontenturl AS content_url
+FROM zinteractions i
+LEFT JOIN zcontacts c ON i.zsender = c.z_pk
+ORDER BY i.zstartdate ASC
+"#,
+    },
+    SqlVariant {
+        required_tables: &["zinteractions"],
+        sql: r#"
+SELECT z_pk AS interaction_id, zstartdate AS start_date, zenddate AS end_date,
+       zbundleid AS bundle_id, NULL AS contact_name, NULL AS contact_id,
+       zdirection AS direction, zisresponse AS is_response,
+       zrecipientcount AS recipient_count, zcreationdate AS creation_date,
+       zcontenturl AS content_url
+FROM zinteractions ORDER BY zstartdate ASC
+"#,
+    },
+];
+
+static INTERACTIONC_ATTACHMENTS: &[SqlVariant] = &[SqlVariant {
+    required_tables: &["zinteractions", "z_1interactions", "zattachment"],
+    sql: r#"
+SELECT i.z_pk AS interaction_id, i.zcreationdate AS creation_date,
+       i.zbundleid AS bundle_id, i.ztargetbundleid AS target_bundle,
+       i.zuuid AS uuid, a.zcontenttext AS content_text, a.zuti AS uti,
+       a.zcontenturl AS content_url
+FROM zinteractions i
+INNER JOIN z_1interactions link ON i.z_pk = link.z_3interactions
+INNER JOIN zattachment a ON link.z_1attachments = a.z_pk
+ORDER BY i.zcreationdate ASC
+"#,
+}];
+
+static SAFARI_FAVICONS: &[SqlVariant] = &[
+    SqlVariant {
+        required_tables: &["icon_info", "page_url"],
+        sql: r#"
+SELECT icon_info.uuid AS icon_id, icon_info.timestamp AS timestamp,
+       page_url.url AS page_url, icon_info.url AS icon_url,
+       icon_info.width AS width, icon_info.height AS height,
+       icon_info.has_generated_representations AS generated
+FROM icon_info
+LEFT JOIN page_url ON icon_info.uuid = page_url.uuid
+ORDER BY icon_info.timestamp ASC
+"#,
+    },
+    SqlVariant {
+        required_tables: &["icon_info"],
+        sql: r#"
+SELECT uuid AS icon_id, timestamp AS timestamp, NULL AS page_url,
+       url AS icon_url, width AS width, height AS height,
+       has_generated_representations AS generated
+FROM icon_info ORDER BY timestamp ASC
+"#,
+    },
+];
+
+static SAFARI_CACHE: &[SqlVariant] = &[
+    SqlVariant {
+        required_tables: &["cfurl_cache_response"],
+        sql: r#"
+SELECT response.entry_ID AS entry_id, response.request_key AS request_key,
+       response.time_stamp AS time_stamp, response.partition AS partition,
+       response.storage_policy AS storage_policy, receiver.isDataOnFS AS on_fs,
+       length(receiver.receiver_data) AS payload_size,
+       length(blob.response_object) AS response_size,
+       length(blob.request_object) AS request_size
+FROM cfurl_cache_response response
+LEFT JOIN cfurl_cache_receiver_data receiver ON receiver.entry_ID = response.entry_ID
+LEFT JOIN cfurl_cache_blob_data blob ON blob.entry_ID = response.entry_ID
+ORDER BY response.time_stamp ASC
+"#,
+    },
+    SqlVariant {
+        required_tables: &["cfurl_cache_response"],
+        sql: r#"
+SELECT entry_ID AS entry_id, request_key AS request_key, time_stamp AS time_stamp,
+       partition AS partition, storage_policy AS storage_policy, NULL AS on_fs,
+       NULL AS payload_size, NULL AS response_size, NULL AS request_size
+FROM cfurl_cache_response ORDER BY time_stamp ASC
+"#,
+    },
+];
+
+static CALL_HISTORY_GROUPS: &[SqlVariant] = &[
+    SqlVariant {
+        required_tables: &["ZCALLRECORD", "Z_2REMOTEPARTICIPANTHANDLES", "ZHANDLE"],
+        sql: r#"
+SELECT r.Z_PK AS call_id, r.ZDATE AS date, r.ZDURATION AS duration,
+       r.ZORIGINATED AS originated, r.ZANSWERED AS answered, r.ZCALLTYPE AS call_type,
+       r.ZSERVICE_PROVIDER AS service_provider, r.ZDISCONNECTED_CAUSE AS disconnect_cause,
+       r.ZISO_COUNTRY_CODE AS country, r.ZLOCATION AS location,
+       group_concat(h.ZVALUE, ', ') AS numbers,
+       count(ph.Z_2REMOTEPARTICIPANTCALLS) AS participant_count
+FROM ZCALLRECORD r
+LEFT JOIN Z_2REMOTEPARTICIPANTHANDLES ph ON ph.Z_2REMOTEPARTICIPANTCALLS = r.Z_PK
+LEFT JOIN ZHANDLE h ON h.Z_PK = ph.Z_3REMOTEPARTICIPANTHANDLES
+GROUP BY r.Z_PK
+ORDER BY r.ZDATE ASC
+"#,
+    },
+    SqlVariant {
+        required_tables: &["ZCALLRECORD"],
+        sql: r#"
+SELECT Z_PK AS call_id, ZDATE AS date, ZDURATION AS duration,
+       ZORIGINATED AS originated, ZANSWERED AS answered, ZCALLTYPE AS call_type,
+       ZSERVICE_PROVIDER AS service_provider, ZDISCONNECTED_CAUSE AS disconnect_cause,
+       ZISO_COUNTRY_CODE AS country, ZLOCATION AS location,
+       NULL AS numbers, 1 AS participant_count
+FROM ZCALLRECORD ORDER BY ZDATE ASC
+"#,
+    },
+];
+
+pub static IOS_INTERACTIONC: SqlSpec = SqlSpec {
+    artifact: "ios_interactionc",
+    platform: "ios",
+    paths: &["**/interactionC.db"],
+    units: &[
+        SqlUnit {
+            label: "interaction",
+            variants: INTERACTIONC,
+            time_column: Some("start_date"),
+            time_kind: TimeKind::Cocoa,
+            key_columns: &["interaction_id"],
+            title_columns: &["bundle_id", "contact_name", "content_url"],
+        },
+        SqlUnit {
+            label: "attachment",
+            variants: INTERACTIONC_ATTACHMENTS,
+            time_column: Some("creation_date"),
+            time_kind: TimeKind::Cocoa,
+            key_columns: &["uuid", "interaction_id"],
+            title_columns: &["content_text", "content_url"],
+        },
+    ],
+};
+
+pub static IOS_SAFARI_FAVICONS: SqlSpec = SqlSpec {
+    artifact: "ios_safari_favicons",
+    platform: "ios",
+    paths: &["**/Library/Image Cache/Favicons/Favicons.db"],
+    units: &[SqlUnit {
+        label: "favicon",
+        variants: SAFARI_FAVICONS,
+        time_column: Some("timestamp"),
+        time_kind: TimeKind::CocoaOrUnix,
+        key_columns: &["icon_id"],
+        title_columns: &["page_url", "icon_url"],
+    }],
+};
+
+pub static IOS_SAFARI_CACHE: SqlSpec = SqlSpec {
+    artifact: "ios_safari_cache",
+    platform: "ios",
+    paths: &["**/Library/Caches/com.apple.mobilesafari/Cache.db"],
+    units: &[SqlUnit {
+        label: "cache",
+        variants: SAFARI_CACHE,
+        time_column: Some("time_stamp"),
+        time_kind: TimeKind::CocoaOrUnix,
+        key_columns: &["entry_id"],
+        title_columns: &["request_key"],
+    }],
+};
+
+pub static IOS_CALL_GROUPS: SqlSpec = SqlSpec {
+    artifact: "ios_call_groups",
+    platform: "ios",
+    paths: &["**/CallHistory.storedata"],
+    units: &[SqlUnit {
+        label: "group_call",
+        variants: CALL_HISTORY_GROUPS,
+        time_column: Some("date"),
+        time_kind: TimeKind::Cocoa,
+        key_columns: &["call_id"],
+        title_columns: &["numbers", "service_provider"],
+    }],
+};
+
 pub static IOS_SPECS: &[&SqlSpec] = &[
     &IOS_MESSAGES,
     &IOS_CALLS,
@@ -978,4 +1166,8 @@ pub static IOS_SPECS: &[&SqlSpec] = &[
     &IOS_KEYBOARD_VWORDS,
     &IOS_NOTES_PROTECTED,
     &IOS_SAFARI_WEBSEARCH,
+    &IOS_INTERACTIONC,
+    &IOS_SAFARI_FAVICONS,
+    &IOS_SAFARI_CACHE,
+    &IOS_CALL_GROUPS,
 ];

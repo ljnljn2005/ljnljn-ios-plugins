@@ -198,6 +198,41 @@ trigger = "manual"
 category = "ios"
 
 [[analyzer]]
+id = "ios_interactionc"
+name = "CoreDuet 交互记录（检材）"
+scope = "evidence"
+trigger = "manual"
+category = "ios"
+
+[[analyzer]]
+id = "ios_safari_favicons"
+name = "Safari 网站图标（检材）"
+scope = "evidence"
+trigger = "manual"
+category = "ios"
+
+[[analyzer]]
+id = "ios_safari_cache"
+name = "Safari 缓存记录（检材）"
+scope = "evidence"
+trigger = "manual"
+category = "ios"
+
+[[analyzer]]
+id = "ios_call_groups"
+name = "群组通话（检材）"
+scope = "evidence"
+trigger = "manual"
+category = "ios"
+
+[[analyzer]]
+id = "ios_bluetooth_reg"
+name = "蓝牙设备注册表（检材）"
+scope = "evidence"
+trigger = "manual"
+category = "ios"
+
+[[analyzer]]
 id = "ios_selected_databases"
 name = "iOS 数据库（单文件）"
 scope = "files"

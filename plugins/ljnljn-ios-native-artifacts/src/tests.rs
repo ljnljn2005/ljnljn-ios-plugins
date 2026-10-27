@@ -640,6 +640,78 @@ fn screen_time_extra_and_keyboard_and_websearch_rows() {
 }
 
 #[test]
+fn interaction_favicon_cache_group_and_bluetooth_registry() {
+    let root = Root::new("ios-extra2");
+    root.database(
+        "data/interactionC.db",
+        &format!(
+            "CREATE TABLE zcontacts(z_pk INTEGER PRIMARY KEY, zdisplayname TEXT, zidentifier TEXT);\
+             CREATE TABLE zinteractions(z_pk INTEGER PRIMARY KEY, zstartdate INTEGER, zenddate INTEGER, \
+             zbundleid TEXT, zsender INTEGER, zdirection INTEGER, zisresponse INTEGER, \
+             zrecipientcount INTEGER, zcreationdate INTEGER, zcontenturl TEXT);\
+             INSERT INTO zcontacts VALUES(1, 'Alice', 'alice@example.com');\
+             INSERT INTO zinteractions VALUES(1, {COCOA_2024}, {COCOA_2024}, 'com.apple.MobileSMS', 1, 0, 0, 1, {COCOA_2024}, 'sms://1');"
+        ),
+    );
+    root.database(
+        "data/Containers/Data/Application/A/Library/Image Cache/Favicons/Favicons.db",
+        &format!(
+            "CREATE TABLE icon_info(uuid TEXT, timestamp INTEGER, url TEXT, width INTEGER, height INTEGER, \
+             has_generated_representations INTEGER);\
+             CREATE TABLE page_url(uuid TEXT, url TEXT);\
+             INSERT INTO icon_info VALUES('u1', {COCOA_2024}, 'https://example.com/favicon.ico', 32, 32, 0);\
+             INSERT INTO page_url VALUES('u1', 'https://example.com');"
+        ),
+    );
+    root.database(
+        "data/Containers/Data/Application/A/Library/Caches/com.apple.mobilesafari/Cache.db",
+        &format!(
+            "CREATE TABLE cfurl_cache_response(entry_ID INTEGER PRIMARY KEY, request_key TEXT, \
+             time_stamp INTEGER, partition TEXT, storage_policy INTEGER);\
+             INSERT INTO cfurl_cache_response VALUES(1, 'https://example.com', {COCOA_2024}, 'p', 0);"
+        ),
+    );
+    root.database(
+        "data/CallHistory.storedata",
+        &format!(
+            "CREATE TABLE ZCALLRECORD(Z_PK INTEGER PRIMARY KEY, ZDATE INTEGER, ZDURATION INTEGER, \
+             ZORIGINATED INTEGER, ZANSWERED INTEGER, ZCALLTYPE INTEGER, ZSERVICE_PROVIDER TEXT, \
+             ZDISCONNECTED_CAUSE INTEGER, ZISO_COUNTRY_CODE TEXT, ZLOCATION TEXT);\
+             CREATE TABLE Z_2REMOTEPARTICIPANTHANDLES(Z_2REMOTEPARTICIPANTCALLS INTEGER, \
+             Z_3REMOTEPARTICIPANTHANDLES INTEGER);\
+             CREATE TABLE ZHANDLE(Z_PK INTEGER PRIMARY KEY, ZVALUE TEXT);\
+             INSERT INTO ZHANDLE VALUES(1, '+8613800000000');\
+             INSERT INTO Z_2REMOTEPARTICIPANTHANDLES VALUES(1, 1);\
+             INSERT INTO ZCALLRECORD VALUES(1, {COCOA_2024}, 30, 1, 1, 1, 'Telephony', 0, 'CN', 'Shanghai');"
+        ),
+    );
+    root.write(
+        "data/Library/Preferences/com.apple.MobileBluetooth.devices.plist",
+        r#"<?xml version="1.0" encoding="UTF-8"?>
+<plist version="1.0"><dict><key>AA:BB:CC</key><dict>
+<key>Name</key><string>Watch</string>
+<key>DefaultName</key><string>Apple Watch</string>
+<key>LastSeenTime</key><integer>1704067200</integer>
+<key>UserNameKey</key><string>user</string>
+<key>DeviceIdProduct</key><string>123</string>
+</dict></dict></plist>
+"#,
+    );
+
+    for (analyzer, artifact) in [
+        ("ios_interactionc", "ios_interactionc"),
+        ("ios_safari_favicons", "ios_safari_favicons"),
+        ("ios_safari_cache", "ios_safari_cache"),
+        ("ios_call_groups", "ios_call_groups"),
+        ("ios_bluetooth_reg", "ios_bluetooth_reg"),
+    ] {
+        let run = root.evidence(analyzer);
+        assert_eq!(run.count("mobile.artifact"), 1, "{analyzer}");
+        assert_eq!(run.of_type("mobile.artifact")[0].text("artifact"), Some(artifact));
+    }
+}
+
+#[test]
 fn selected_database_uses_the_files_scope() {
     let root = Root::new("selected");
     let path = message_fixture(&root);

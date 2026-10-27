@@ -38,6 +38,11 @@ LovelyCarve **LPP v2** 插件：直接读取 iOS 完整文件系统提取物中�
 | `ios_keyboard_vwords` | `Keyboard/VulgarWordUsage.db` | 敏感词、应用、收件人、使用次数、最后使用时间 |
 | `ios_notes_protected` | `NoteStore.sqlite` | 受密码保护便笺的标题、提示、修改时间 |
 | `ios_safari_websearch` | `Safari/History.db` | 含 `search?q=` 的访问 URL、标题、时间 |
+| `ios_interactionc` | `interactionC.db` | CoreDuet 交互起止、bundle、联系人、方向、内容 URL 与附件 |
+| `ios_safari_favicons` | `Library/Image Cache/Favicons/Favicons.db` | 页面 URL、图标 URL、尺寸、时间 |
+| `ios_safari_cache` | `Library/Caches/com.apple.mobilesafari/Cache.db` | 请求键、时间、分区、缓存策略、载荷/对象大小 |
+| `ios_call_groups` | `CallHistory.storedata` | 群组通话参与者、号码、方向、时长、断开原因 |
+| `ios_bluetooth_reg` | `com.apple.MobileBluetooth.devices.plist` | 蓝牙 MAC、名称、最后发现时间、产品 ID |
 
 另有 `ios_selected_databases`（手动选数据库）和 `ios_selected_plist`
 （手动选 plist）。

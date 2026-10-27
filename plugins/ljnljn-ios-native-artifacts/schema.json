@@ -30,6 +30,11 @@
     "ios_keyboard_vwords",
     "ios_notes_protected",
     "ios_safari_websearch",
+    "ios_interactionc",
+    "ios_safari_favicons",
+    "ios_safari_cache",
+    "ios_call_groups",
+    "ios_bluetooth_reg",
     "ios_selected_databases",
     "ios_selected_plist"
   ],

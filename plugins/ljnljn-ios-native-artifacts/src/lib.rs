@@ -127,6 +127,26 @@ fn safari_websearch(run: &Run) -> Result<()> {
     run_evidence(run, &specs::IOS_SAFARI_WEBSEARCH)
 }
 
+fn interactionc(run: &Run) -> Result<()> {
+    run_evidence(run, &specs::IOS_INTERACTIONC)
+}
+
+fn safari_favicons(run: &Run) -> Result<()> {
+    run_evidence(run, &specs::IOS_SAFARI_FAVICONS)
+}
+
+fn safari_cache(run: &Run) -> Result<()> {
+    run_evidence(run, &specs::IOS_SAFARI_CACHE)
+}
+
+fn call_groups(run: &Run) -> Result<()> {
+    run_evidence(run, &specs::IOS_CALL_GROUPS)
+}
+
+fn bluetooth_reg(run: &Run) -> Result<()> {
+    plist_artifacts::bluetooth_registry(run)
+}
+
 fn selected_databases(run: &Run) -> Result<()> {
     mobile_core::run_files(run, specs::IOS_SPECS)
 }
@@ -166,6 +186,11 @@ fn plugin() -> Plugin {
         .analyzer("ios_keyboard_vwords", keyboard_vwords)
         .analyzer("ios_notes_protected", notes_protected)
         .analyzer("ios_safari_websearch", safari_websearch)
+        .analyzer("ios_interactionc", interactionc)
+        .analyzer("ios_safari_favicons", safari_favicons)
+        .analyzer("ios_safari_cache", safari_cache)
+        .analyzer("ios_call_groups", call_groups)
+        .analyzer("ios_bluetooth_reg", bluetooth_reg)
         .analyzer("ios_selected_databases", selected_databases)
         .analyzer("ios_selected_plist", selected_plist)
 }
