@@ -25,6 +25,11 @@
     "ios_sms_reactions",
     "ios_sms_replies",
     "ios_sms_recently_deleted",
+    "ios_screen_time_users",
+    "ios_screen_time_org",
+    "ios_keyboard_vwords",
+    "ios_notes_protected",
+    "ios_safari_websearch",
     "ios_selected_databases",
     "ios_selected_plist"
   ],

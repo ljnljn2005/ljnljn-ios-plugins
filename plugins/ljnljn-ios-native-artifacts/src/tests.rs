@@ -580,6 +580,66 @@ fn sms_recently_deleted_read_delete_date() {
 }
 
 #[test]
+fn screen_time_extra_and_keyboard_and_websearch_rows() {
+    let root = Root::new("ios-extra");
+    root.database(
+        "data/RMAdminStore-Local.sqlite",
+        &format!(
+            "CREATE TABLE ZCOREUSER(Z_PK INTEGER PRIMARY KEY, ZAPPLEID TEXT, ZGIVENNAME TEXT, ZFAMILYNAME TEXT);\
+             CREATE TABLE ZCOREDEVICE(Z_PK INTEGER PRIMARY KEY, ZNAME TEXT, ZIDENTIFIER TEXT);\
+             CREATE TABLE ZUSERDEVICESTATE(Z_PK INTEGER PRIMARY KEY, ZUSER INTEGER, ZDEVICE INTEGER, \
+             ZSCREENTIMEENABLED INTEGER, ZCLOUDSYNCENABLED INTEGER, ZMANAGEMENTENABLED INTEGER, \
+             ZLASTFAMILYCHECKINDATE INTEGER);\
+             CREATE TABLE ZCOREORGANIZATIONSETTINGS(Z_PK INTEGER PRIMARY KEY, Z_OPT INTEGER, \
+             ZMODIFICATIONDATE INTEGER, ZALLLIMITSENABLED INTEGER, ZCOMMUNICATIONPOLICY INTEGER, \
+             ZCONTACTMANAGEMENTSTATE INTEGER, ZISMANAGED INTEGER);\
+             INSERT INTO ZCOREUSER VALUES(1, 'alice@example.com', 'Alice', 'Wang');\
+             INSERT INTO ZCOREDEVICE VALUES(1, 'iPhone', 'DEV-1');\
+             INSERT INTO ZUSERDEVICESTATE VALUES(1, 1, 1, 1, 0, 0, {COCOA_2024});\
+             INSERT INTO ZCOREORGANIZATIONSETTINGS VALUES(1, 1, {COCOA_2024}, 1, 0, 0, 0);"
+        ),
+    );
+    root.database(
+        "data/Keyboard/VulgarWordUsage.db",
+        &format!(
+            "CREATE TABLE vword_usage(last_use_timestamp INTEGER, app TEXT, recipient TEXT, \
+             vword TEXT, word_reading TEXT, usage_count INTEGER, journaled INTEGER);\
+             INSERT INTO vword_usage VALUES({COCOA_2024}, 'com.app', 'Bob', 'word', 'reading', 2, 0);"
+        ),
+    );
+    root.database(
+        "data/NoteStore.sqlite",
+        &format!(
+            "CREATE TABLE ZICCLOUDSYNCINGOBJECT(Z_PK INTEGER PRIMARY KEY, ZTITLE1 TEXT, \
+             ZPASSWORDHINT TEXT, ZMODIFICATIONDATE1 INTEGER, ZISPASSWORDPROTECTED INTEGER);\
+             INSERT INTO ZICCLOUDSYNCINGOBJECT VALUES(1, 'Secret', 'hint', {COCOA_2024}, 1);"
+        ),
+    );
+    root.database(
+        "data/Safari/History.db",
+        &format!(
+            "CREATE TABLE history_items(id INTEGER PRIMARY KEY, url TEXT, visit_count INTEGER);\
+             CREATE TABLE history_visits(id INTEGER PRIMARY KEY, history_item INTEGER, visit_time INTEGER, \
+             title TEXT, origin INTEGER, load_successful INTEGER);\
+             INSERT INTO history_items VALUES(1, 'https://example.com/search?q=test', 1);\
+             INSERT INTO history_visits VALUES(1, 1, {COCOA_2024}, 'Search', 0, 1);"
+        ),
+    );
+
+    for (analyzer, artifact) in [
+        ("ios_screen_time_users", "ios_screen_time_users"),
+        ("ios_screen_time_org", "ios_screen_time_org"),
+        ("ios_keyboard_vwords", "ios_keyboard_vwords"),
+        ("ios_notes_protected", "ios_notes_protected"),
+        ("ios_safari_websearch", "ios_safari_websearch"),
+    ] {
+        let run = root.evidence(analyzer);
+        assert_eq!(run.count("mobile.artifact"), 1, "{analyzer}");
+        assert_eq!(run.of_type("mobile.artifact")[0].text("artifact"), Some(artifact));
+    }
+}
+
+#[test]
 fn selected_database_uses_the_files_scope() {
     let root = Root::new("selected");
     let path = message_fixture(&root);

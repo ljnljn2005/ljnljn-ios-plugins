@@ -33,6 +33,11 @@ LovelyCarve **LPP v2** 插件：直接读取 iOS 完整文件系统提取物中�
 | `ios_sms_reactions` | `sms.db` | 回应类型、目标消息、发送者、聊天、时间 |
 | `ios_sms_replies` | `sms.db` | 回复正文、被引用消息 GUID、聊天、时间 |
 | `ios_sms_recently_deleted` | `sms.db` | 删除时间、消息时间、正文、聊天、同步状态 |
+| `ios_screen_time_users` | `RMAdminStore-*.sqlite` | 用户/设备、Apple ID、屏幕时间/云同步/管理标志、最后签到 |
+| `ios_screen_time_org` | `RMAdminStore-*.sqlite` | 组织设置、限制开关、通信策略、管理标志 |
+| `ios_keyboard_vwords` | `Keyboard/VulgarWordUsage.db` | 敏感词、应用、收件人、使用次数、最后使用时间 |
+| `ios_notes_protected` | `NoteStore.sqlite` | 受密码保护便笺的标题、提示、修改时间 |
+| `ios_safari_websearch` | `Safari/History.db` | 含 `search?q=` 的访问 URL、标题、时间 |
 
 另有 `ios_selected_databases`（手动选数据库）和 `ios_selected_plist`
 （手动选 plist）。

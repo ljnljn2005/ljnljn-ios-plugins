@@ -107,6 +107,26 @@ fn sms_recently_deleted(run: &Run) -> Result<()> {
     run_evidence(run, &specs::IOS_SMS_RECENTLY_DELETED)
 }
 
+fn screen_time_users(run: &Run) -> Result<()> {
+    run_evidence(run, &specs::IOS_SCREEN_TIME_USERS)
+}
+
+fn screen_time_org(run: &Run) -> Result<()> {
+    run_evidence(run, &specs::IOS_SCREEN_TIME_ORG)
+}
+
+fn keyboard_vwords(run: &Run) -> Result<()> {
+    run_evidence(run, &specs::IOS_KEYBOARD_VWORDS)
+}
+
+fn notes_protected(run: &Run) -> Result<()> {
+    run_evidence(run, &specs::IOS_NOTES_PROTECTED)
+}
+
+fn safari_websearch(run: &Run) -> Result<()> {
+    run_evidence(run, &specs::IOS_SAFARI_WEBSEARCH)
+}
+
 fn selected_databases(run: &Run) -> Result<()> {
     mobile_core::run_files(run, specs::IOS_SPECS)
 }
@@ -141,6 +161,11 @@ fn plugin() -> Plugin {
         .analyzer("ios_sms_reactions", sms_reactions)
         .analyzer("ios_sms_replies", sms_replies)
         .analyzer("ios_sms_recently_deleted", sms_recently_deleted)
+        .analyzer("ios_screen_time_users", screen_time_users)
+        .analyzer("ios_screen_time_org", screen_time_org)
+        .analyzer("ios_keyboard_vwords", keyboard_vwords)
+        .analyzer("ios_notes_protected", notes_protected)
+        .analyzer("ios_safari_websearch", safari_websearch)
         .analyzer("ios_selected_databases", selected_databases)
         .analyzer("ios_selected_plist", selected_plist)
 }

@@ -163,6 +163,41 @@ trigger = "manual"
 category = "ios"
 
 [[analyzer]]
+id = "ios_screen_time_users"
+name = "屏幕使用时间用户/设备（检材）"
+scope = "evidence"
+trigger = "manual"
+category = "ios"
+
+[[analyzer]]
+id = "ios_screen_time_org"
+name = "屏幕使用时间组织设置（检材）"
+scope = "evidence"
+trigger = "manual"
+category = "ios"
+
+[[analyzer]]
+id = "ios_keyboard_vwords"
+name = "键盘敏感词使用（检材）"
+scope = "evidence"
+trigger = "manual"
+category = "ios"
+
+[[analyzer]]
+id = "ios_notes_protected"
+name = "受密码保护便笺（检材）"
+scope = "evidence"
+trigger = "manual"
+category = "ios"
+
+[[analyzer]]
+id = "ios_safari_websearch"
+name = "Safari 搜索 URL（检材）"
+scope = "evidence"
+trigger = "manual"
+category = "ios"
+
+[[analyzer]]
 id = "ios_selected_databases"
 name = "iOS 数据库（单文件）"
 scope = "files"

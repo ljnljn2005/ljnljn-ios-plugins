@@ -801,6 +801,159 @@ pub static IOS_SMS_RECENTLY_DELETED: SqlSpec = SqlSpec {
     }],
 };
 
+static SCREEN_TIME_USERS: &[SqlVariant] = &[
+    SqlVariant {
+        required_tables: &["ZUSERDEVICESTATE", "ZCOREUSER", "ZCOREDEVICE"],
+        sql: r#"
+SELECT s.Z_PK AS state_id, u.ZAPPLEID AS apple_id, u.ZGIVENNAME AS given_name,
+       u.ZFAMILYNAME AS family_name, d.ZNAME AS device_name,
+       d.ZIDENTIFIER AS device_id, s.ZSCREENTIMEENABLED AS enabled,
+       s.ZCLOUDSYNCENABLED AS cloud_sync, s.ZMANAGEMENTENABLED AS management_enabled,
+       s.ZLASTFAMILYCHECKINDATE AS last_checkin
+FROM ZUSERDEVICESTATE s
+LEFT JOIN ZCOREUSER u ON u.Z_PK = s.ZUSER
+LEFT JOIN ZCOREDEVICE d ON d.Z_PK = s.ZDEVICE
+ORDER BY s.Z_PK ASC
+"#,
+    },
+    SqlVariant {
+        required_tables: &["ZUSERDEVICESTATE"],
+        sql: r#"
+SELECT Z_PK AS state_id, NULL AS apple_id, NULL AS given_name,
+       NULL AS family_name, NULL AS device_name, NULL AS device_id,
+       ZSCREENTIMEENABLED AS enabled, ZCLOUDSYNCENABLED AS cloud_sync,
+       ZMANAGEMENTENABLED AS management_enabled,
+       ZLASTFAMILYCHECKINDATE AS last_checkin
+FROM ZUSERDEVICESTATE ORDER BY Z_PK ASC
+"#,
+    },
+];
+
+static SCREEN_TIME_ORG: &[SqlVariant] = &[
+    SqlVariant {
+        required_tables: &["ZCOREORGANIZATIONSETTINGS"],
+        sql: r#"
+SELECT Z_PK AS row_id, Z_OPT AS row_version, ZMODIFICATIONDATE AS modified,
+       ZALLLIMITSENABLED AS all_limits, ZCOMMUNICATIONPOLICY AS communication_policy,
+       ZCONTACTMANAGEMENTSTATE AS contact_management, ZISMANAGED AS managed
+FROM ZCOREORGANIZATIONSETTINGS ORDER BY Z_PK ASC
+"#,
+    },
+    SqlVariant {
+        required_tables: &["ZCOREORGANIZATIONSETTINGS"],
+        sql: r#"
+SELECT Z_PK AS row_id, Z_OPT AS row_version, ZMODIFICATIONDATE AS modified,
+       ZALLLIMITSENABLED AS all_limits, ZCOMMUNICATIONPOLICY AS communication_policy,
+       ZCONTACTMANAGEMENTSTATE AS contact_management, NULL AS managed
+FROM ZCOREORGANIZATIONSETTINGS ORDER BY Z_PK ASC
+"#,
+    },
+];
+
+static KEYBOARD_VWORDS: &[SqlVariant] = &[SqlVariant {
+    required_tables: &["vword_usage"],
+    sql: r#"
+SELECT ROWID AS record_id, last_use_timestamp AS last_used, app AS app,
+       recipient AS recipient, vword AS word, word_reading AS reading,
+       usage_count AS usage_count, journaled AS journaled
+FROM vword_usage ORDER BY last_use_timestamp ASC
+"#,
+}];
+
+static NOTES_PROTECTED: &[SqlVariant] = &[SqlVariant {
+    required_tables: &["ZICCLOUDSYNCINGOBJECT"],
+    sql: r#"
+SELECT Z_PK AS note_id, ZTITLE1 AS title, ZPASSWORDHINT AS hint,
+       ZMODIFICATIONDATE1 AS modified
+FROM ZICCLOUDSYNCINGOBJECT
+WHERE ZISPASSWORDPROTECTED = 1
+ORDER BY ZMODIFICATIONDATE1 ASC
+"#,
+}];
+
+static SAFARI_WEBSEARCH: &[SqlVariant] = &[SqlVariant {
+    required_tables: &["history_visits", "history_items"],
+    sql: r#"
+SELECT v.id AS visit_id, v.visit_time AS visit_time, i.url AS url,
+       i.visit_count AS visit_count, v.title AS title, v.origin AS origin,
+       v.load_successful AS load_successful
+FROM history_visits v
+JOIN history_items i ON i.id = v.history_item
+WHERE i.url LIKE '%search?q=%'
+ORDER BY v.visit_time ASC
+"#,
+}];
+
+pub static IOS_SCREEN_TIME_USERS: SqlSpec = SqlSpec {
+    artifact: "ios_screen_time_users",
+    platform: "ios",
+    paths: &["**/RMAdminStore-*.sqlite"],
+    units: &[SqlUnit {
+        label: "user_device",
+        variants: SCREEN_TIME_USERS,
+        time_column: Some("last_checkin"),
+        time_kind: TimeKind::Cocoa,
+        key_columns: &["state_id"],
+        title_columns: &["given_name", "family_name", "device_name"],
+    }],
+};
+
+pub static IOS_SCREEN_TIME_ORG: SqlSpec = SqlSpec {
+    artifact: "ios_screen_time_org",
+    platform: "ios",
+    paths: &["**/RMAdminStore-*.sqlite"],
+    units: &[SqlUnit {
+        label: "org_settings",
+        variants: SCREEN_TIME_ORG,
+        time_column: Some("modified"),
+        time_kind: TimeKind::Cocoa,
+        key_columns: &["row_id"],
+        title_columns: &["row_id", "row_version"],
+    }],
+};
+
+pub static IOS_KEYBOARD_VWORDS: SqlSpec = SqlSpec {
+    artifact: "ios_keyboard_vwords",
+    platform: "ios",
+    paths: &["**/Keyboard/VulgarWordUsage.db"],
+    units: &[SqlUnit {
+        label: "vword",
+        variants: KEYBOARD_VWORDS,
+        time_column: Some("last_used"),
+        time_kind: TimeKind::Cocoa,
+        key_columns: &["record_id"],
+        title_columns: &["word", "app", "recipient"],
+    }],
+};
+
+pub static IOS_NOTES_PROTECTED: SqlSpec = SqlSpec {
+    artifact: "ios_notes_protected",
+    platform: "ios",
+    paths: &["**/NoteStore.sqlite"],
+    units: &[SqlUnit {
+        label: "protected",
+        variants: NOTES_PROTECTED,
+        time_column: Some("modified"),
+        time_kind: TimeKind::Cocoa,
+        key_columns: &["note_id"],
+        title_columns: &["title", "hint"],
+    }],
+};
+
+pub static IOS_SAFARI_WEBSEARCH: SqlSpec = SqlSpec {
+    artifact: "ios_safari_websearch",
+    platform: "ios",
+    paths: &["**/Safari/History.db", "**/History.db"],
+    units: &[SqlUnit {
+        label: "search",
+        variants: SAFARI_WEBSEARCH,
+        time_column: Some("visit_time"),
+        time_kind: TimeKind::CocoaOrUnix,
+        key_columns: &["visit_id"],
+        title_columns: &["title", "url"],
+    }],
+};
+
 pub static IOS_SPECS: &[&SqlSpec] = &[
     &IOS_MESSAGES,
     &IOS_CALLS,
@@ -820,4 +973,9 @@ pub static IOS_SPECS: &[&SqlSpec] = &[
     &IOS_SMS_REACTIONS,
     &IOS_SMS_REPLIES,
     &IOS_SMS_RECENTLY_DELETED,
+    &IOS_SCREEN_TIME_USERS,
+    &IOS_SCREEN_TIME_ORG,
+    &IOS_KEYBOARD_VWORDS,
+    &IOS_NOTES_PROTECTED,
+    &IOS_SAFARI_WEBSEARCH,
 ];
