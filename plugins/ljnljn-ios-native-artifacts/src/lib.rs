@@ -50,6 +50,38 @@ fn calendar(run: &Run) -> Result<()> {
     run_evidence(run, &specs::IOS_CALENDAR)
 }
 
+fn notes(run: &Run) -> Result<()> {
+    run_evidence(run, &specs::IOS_NOTES)
+}
+
+fn safari_bookmarks(run: &Run) -> Result<()> {
+    run_evidence(run, &specs::IOS_SAFARI_BOOKMARKS)
+}
+
+fn safari_tabs(run: &Run) -> Result<()> {
+    run_evidence(run, &specs::IOS_SAFARI_TABS)
+}
+
+fn keyboard(run: &Run) -> Result<()> {
+    run_evidence(run, &specs::IOS_KEYBOARD)
+}
+
+fn voicemail(run: &Run) -> Result<()> {
+    run_evidence(run, &specs::IOS_VOICEMAIL)
+}
+
+fn wifi_networks(run: &Run) -> Result<()> {
+    run_evidence(run, &specs::IOS_WIFI_NETWORKS)
+}
+
+fn bluetooth(run: &Run) -> Result<()> {
+    run_evidence(run, &specs::IOS_BLUETOOTH)
+}
+
+fn screen_time(run: &Run) -> Result<()> {
+    run_evidence(run, &specs::IOS_SCREEN_TIME)
+}
+
 fn selected_databases(run: &Run) -> Result<()> {
     mobile_core::run_files(run, specs::IOS_SPECS)
 }
@@ -70,6 +102,14 @@ fn plugin() -> Plugin {
         .analyzer("ios_whatsapp", whatsapp)
         .analyzer("ios_photos", photos)
         .analyzer("ios_calendar", calendar)
+        .analyzer("ios_notes", notes)
+        .analyzer("ios_safari_bookmarks", safari_bookmarks)
+        .analyzer("ios_safari_tabs", safari_tabs)
+        .analyzer("ios_keyboard", keyboard)
+        .analyzer("ios_voicemail", voicemail)
+        .analyzer("ios_wifi_networks", wifi_networks)
+        .analyzer("ios_bluetooth", bluetooth)
+        .analyzer("ios_screen_time", screen_time)
         .analyzer("ios_selected_databases", selected_databases)
         .analyzer("ios_selected_plist", selected_plist)
 }

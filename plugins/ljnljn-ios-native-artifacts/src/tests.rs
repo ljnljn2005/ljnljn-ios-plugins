@@ -308,6 +308,144 @@ fn device_info_reads_system_version_plist() {
 }
 
 #[test]
+fn notes_read_title_folder_and_modified_time() {
+    let root = Root::new("notes");
+    root.database(
+        "data/NoteStore.sqlite",
+        &format!(
+            "CREATE TABLE ZICCLOUDSYNCINGOBJECT(Z_PK INTEGER PRIMARY KEY, ZTITLE1 TEXT, \
+             ZSNIPPET TEXT, ZFOLDER INTEGER, ZMODIFICATIONDATE1 INTEGER, \
+             ZISPASSWORDPROTECTED INTEGER, ZMARKEDFORDELETION INTEGER, ZISPINNED INTEGER, \
+             ZFILESIZE INTEGER, ZTYPEUTI TEXT, ZNOTE INTEGER);\
+             CREATE TABLE ZICNOTEDATA(ZNOTE INTEGER, ZDATA BLOB);\
+             INSERT INTO ZICCLOUDSYNCINGOBJECT VALUES(1, 'Shopping', 'milk', 0, {COCOA_2024}, 0, 0, 0, 0, NULL, 1);\
+             INSERT INTO ZICNOTEDATA VALUES(1, X'00');"
+        ),
+    );
+    let run = root.evidence("ios_notes");
+    let record = run.of_type("mobile.artifact")[0];
+    assert_eq!(record.text("artifact"), Some("ios_notes"));
+    assert_eq!(record.text("time"), Some("2024-01-01T00:00:00Z"));
+    assert_eq!(
+        data(record, "title").and_then(Value::as_str),
+        Some("Shopping")
+    );
+}
+
+#[test]
+fn safari_bookmarks_read_url_and_title() {
+    let root = Root::new("safari-bookmarks");
+    root.database(
+        "data/Safari/Bookmarks.db",
+        "CREATE TABLE bookmarks(title TEXT, url TEXT, hidden INTEGER);\
+         INSERT INTO bookmarks VALUES('Example', 'https://example.com', 0);",
+    );
+    let run = root.evidence("ios_safari_bookmarks");
+    let record = run.of_type("mobile.artifact")[0];
+    assert_eq!(record.text("artifact"), Some("ios_safari_bookmarks"));
+    assert_eq!(
+        data(record, "url").and_then(Value::as_str),
+        Some("https://example.com")
+    );
+}
+
+#[test]
+fn safari_tabs_skip_deleted_rows() {
+    let root = Root::new("safari-tabs");
+    root.database(
+        "data/Safari/SafariTabs.db",
+        "CREATE TABLE bookmarks(title TEXT, url TEXT, hidden INTEGER, deleted INTEGER);\
+         INSERT INTO bookmarks VALUES('Open', 'https://open.example', 0, 0);\
+         INSERT INTO bookmarks VALUES('Gone', 'https://gone.example', 0, 1);",
+    );
+    let run = root.evidence("ios_safari_tabs");
+    assert_eq!(run.count("mobile.artifact"), 1);
+    assert_eq!(
+        data(run.of_type("mobile.artifact")[0], "title").and_then(Value::as_str),
+        Some("Open")
+    );
+}
+
+#[test]
+fn keyboard_usage_reads_key_and_value() {
+    let root = Root::new("keyboard");
+    root.database(
+        "data/Keyboard/user_model_database.sqlite",
+        &format!(
+            "CREATE TABLE usermodeldurablerecords(creation_date INTEGER, last_update_date INTEGER, \
+             key TEXT, value TEXT);\
+             INSERT INTO usermodeldurablerecords VALUES({}, {COCOA_2024}, 'typed', '42');",
+            1_704_067_200
+        ),
+    );
+    let run = root.evidence("ios_keyboard");
+    let record = run.of_type("mobile.artifact")[0];
+    assert_eq!(record.text("time"), Some("2024-01-01T00:00:00Z"));
+    assert_eq!(data(record, "key").and_then(Value::as_str), Some("typed"));
+}
+
+#[test]
+fn voicemail_reads_sender_and_duration() {
+    let root = Root::new("voicemail");
+    root.database(
+        "data/Voicemail/voicemail.db",
+        "CREATE TABLE voicemail(date INTEGER, sender TEXT, receiver TEXT, duration INTEGER, \
+         trashed_date INTEGER, flags INTEGER);\
+         INSERT INTO voicemail VALUES(1704067200, '+8613800000000', '+8613900000000', 30, 0, 0);",
+    );
+    let run = root.evidence("ios_voicemail");
+    let record = run.of_type("mobile.artifact")[0];
+    assert_eq!(record.text("time"), Some("2024-01-01T00:00:00Z"));
+    assert_eq!(
+        data(record, "sender").and_then(Value::as_str),
+        Some("+8613800000000")
+    );
+}
+
+#[test]
+fn wifi_network_store_reads_ssid() {
+    let root = Root::new("wifi");
+    root.database(
+        "data/Library/Application Support/WiFiNetworkStoreModel.sqlite",
+        "CREATE TABLE Z_PRIMARYKEY(Z_ENT INTEGER, Z_NAME TEXT);\
+         CREATE TABLE ZNETWORK(Z_PK INTEGER PRIMARY KEY, Z_ENT INTEGER, ZSSID TEXT, ZAUTHFLAG INTEGER);\
+         INSERT INTO Z_PRIMARYKEY VALUES(1, 'Network');\
+         INSERT INTO ZNETWORK VALUES(1, 1, 'HomeWiFi', 4);",
+    );
+    let run = root.evidence("ios_wifi_networks");
+    let record = run.of_type("mobile.artifact")[0];
+    assert_eq!(data(record, "ssid").and_then(Value::as_str), Some("HomeWiFi"));
+}
+
+#[test]
+fn bluetooth_paired_reads_device_name() {
+    let root = Root::new("bluetooth");
+    root.database(
+        "data/com.apple.MobileBluetooth.ledevices.paired.db",
+        "CREATE TABLE PairedDevices(Uuid TEXT, Name TEXT, NameOrigin TEXT, Address TEXT, \
+         ResolvedAddress TEXT, LastSeenTime INTEGER, LastConnectionTime INTEGER);\
+         INSERT INTO PairedDevices VALUES('uuid-1', 'Watch', 'user', 'AA:BB', 'AA:BB', 100, 200);",
+    );
+    let run = root.evidence("ios_bluetooth");
+    let record = run.of_type("mobile.artifact")[0];
+    assert_eq!(data(record, "name").and_then(Value::as_str), Some("Watch"));
+}
+
+#[test]
+fn screen_time_settings_read_flags() {
+    let root = Root::new("screen-time");
+    root.database(
+        "data/RMAdminStore-Local.sqlite",
+        "CREATE TABLE ZSCREENTIMESETTINGS(Z_PK INTEGER PRIMARY KEY, Z_OPT INTEGER, \
+         ZSCREENTIMEENABLED INTEGER, ZCLOUDSYNCENABLED INTEGER, ZFAMILYSETUPCOMPLETE INTEGER);\
+         INSERT INTO ZSCREENTIMESETTINGS VALUES(1, 3, 1, 0, 0);",
+    );
+    let run = root.evidence("ios_screen_time");
+    let record = run.of_type("mobile.artifact")[0];
+    assert_eq!(data(record, "enabled").and_then(Value::as_i64), Some(1));
+}
+
+#[test]
 fn selected_database_uses_the_files_scope() {
     let root = Root::new("selected");
     let path = message_fixture(&root);

@@ -65,6 +65,62 @@ trigger = "manual"
 category = "ios"
 
 [[analyzer]]
+id = "ios_notes"
+name = "便笺（检材）"
+scope = "evidence"
+trigger = "manual"
+category = "ios"
+
+[[analyzer]]
+id = "ios_safari_bookmarks"
+name = "Safari 书签（检材）"
+scope = "evidence"
+trigger = "manual"
+category = "ios"
+
+[[analyzer]]
+id = "ios_safari_tabs"
+name = "Safari 标签页（检材）"
+scope = "evidence"
+trigger = "manual"
+category = "ios"
+
+[[analyzer]]
+id = "ios_keyboard"
+name = "键盘使用统计（检材）"
+scope = "evidence"
+trigger = "manual"
+category = "ios"
+
+[[analyzer]]
+id = "ios_voicemail"
+name = "语音信箱（检材）"
+scope = "evidence"
+trigger = "manual"
+category = "ios"
+
+[[analyzer]]
+id = "ios_wifi_networks"
+name = "WiFi 网络记录（检材）"
+scope = "evidence"
+trigger = "manual"
+category = "ios"
+
+[[analyzer]]
+id = "ios_bluetooth"
+name = "已配对蓝牙设备（检材）"
+scope = "evidence"
+trigger = "manual"
+category = "ios"
+
+[[analyzer]]
+id = "ios_screen_time"
+name = "屏幕使用时间设置（检材）"
+scope = "evidence"
+trigger = "manual"
+category = "ios"
+
+[[analyzer]]
 id = "ios_selected_databases"
 name = "iOS 数据库（单文件）"
 scope = "files"

@@ -408,6 +408,267 @@ pub static IOS_CALENDAR: SqlSpec = SqlSpec {
     }],
 };
 
+static NOTES: &[SqlVariant] = &[
+    SqlVariant {
+        required_tables: &["ZICCLOUDSYNCINGOBJECT", "ZICNOTEDATA"],
+        sql: r#"
+SELECT a.Z_PK AS note_id, a.ZTITLE1 AS title, a.ZSNIPPET AS snippet,
+       b.ZTITLE2 AS folder, a.ZMODIFICATIONDATE1 AS modified,
+       a.ZISPASSWORDPROTECTED AS password_protected,
+       a.ZMARKEDFORDELETION AS marked_deleted, a.ZISPINNED AS pinned,
+       d.ZFILESIZE AS attachment_size, d.ZTYPEUTI AS attachment_type
+FROM ZICCLOUDSYNCINGOBJECT a
+LEFT JOIN ZICCLOUDSYNCINGOBJECT b ON a.ZFOLDER = b.Z_PK
+LEFT JOIN ZICCLOUDSYNCINGOBJECT d ON a.Z_PK = d.ZNOTE
+INNER JOIN ZICNOTEDATA f ON f.ZNOTE = a.Z_PK
+ORDER BY a.ZMODIFICATIONDATE1 ASC
+"#,
+    },
+    SqlVariant {
+        required_tables: &["ZICCLOUDSYNCINGOBJECT", "ZICNOTEDATA"],
+        sql: r#"
+SELECT a.Z_PK AS note_id, a.ZTITLE1 AS title, a.ZSNIPPET AS snippet,
+       NULL AS folder, a.ZMODIFICATIONDATE1 AS modified,
+       NULL AS password_protected, NULL AS marked_deleted, NULL AS pinned,
+       NULL AS attachment_size, NULL AS attachment_type
+FROM ZICCLOUDSYNCINGOBJECT a
+INNER JOIN ZICNOTEDATA f ON f.ZNOTE = a.Z_PK
+ORDER BY a.ZMODIFICATIONDATE1 ASC
+"#,
+    },
+];
+
+static SAFARI_BOOKMARKS: &[SqlVariant] = &[SqlVariant {
+    required_tables: &["bookmarks"],
+    sql: r#"
+SELECT ROWID AS bookmark_id, title AS title, url AS url, hidden AS hidden
+FROM bookmarks ORDER BY ROWID ASC
+"#,
+}];
+
+static SAFARI_TABS: &[SqlVariant] = &[
+    SqlVariant {
+        required_tables: &["bookmarks"],
+        sql: r#"
+SELECT ROWID AS tab_id, title AS title, url AS url, hidden AS hidden,
+       deleted AS deleted
+FROM bookmarks
+WHERE url IS NOT NULL AND (deleted IS NULL OR deleted = 0)
+ORDER BY ROWID ASC
+"#,
+    },
+    SqlVariant {
+        required_tables: &["bookmarks"],
+        sql: r#"
+SELECT ROWID AS tab_id, title AS title, url AS url, hidden AS hidden,
+       NULL AS deleted
+FROM bookmarks WHERE url IS NOT NULL ORDER BY ROWID ASC
+"#,
+    },
+];
+
+static KEYBOARD: &[SqlVariant] = &[
+    SqlVariant {
+        required_tables: &["usermodeldurablerecords"],
+        sql: r#"
+SELECT ROWID AS record_id, creation_date AS creation_date,
+       last_update_date AS last_update_date, key AS key, value AS value
+FROM usermodeldurablerecords ORDER BY last_update_date ASC
+"#,
+    },
+    SqlVariant {
+        required_tables: &["usermodeldurablerecords"],
+        sql: r#"
+SELECT ROWID AS record_id, NULL AS creation_date,
+       last_update_date AS last_update_date, key AS key, value AS value
+FROM usermodeldurablerecords ORDER BY last_update_date ASC
+"#,
+    },
+];
+
+static VOICEMAIL: &[SqlVariant] = &[
+    SqlVariant {
+        required_tables: &["voicemail"],
+        sql: r#"
+SELECT ROWID AS voicemail_id, date AS date, sender AS sender,
+       receiver AS receiver, duration AS duration,
+       trashed_date AS trashed_date, flags AS flags
+FROM voicemail ORDER BY date ASC
+"#,
+    },
+    SqlVariant {
+        required_tables: &["voicemail"],
+        sql: r#"
+SELECT ROWID AS voicemail_id, date AS date, sender AS sender,
+       callback_num AS receiver, duration AS duration,
+       trashed_date AS trashed_date, flags AS flags
+FROM voicemail ORDER BY date ASC
+"#,
+    },
+];
+
+static WIFI_NETWORKS: &[SqlVariant] = &[
+    SqlVariant {
+        required_tables: &["ZNETWORK", "Z_PRIMARYKEY"],
+        sql: r#"
+SELECT n.Z_PK AS network_id, p.Z_NAME AS entity, n.ZSSID AS ssid,
+       n.ZAUTHFLAG AS auth_flag
+FROM ZNETWORK n
+LEFT JOIN Z_PRIMARYKEY p ON p.Z_ENT = n.Z_ENT
+ORDER BY n.Z_PK ASC
+"#,
+    },
+    SqlVariant {
+        required_tables: &["ZNETWORK"],
+        sql: r#"
+SELECT Z_PK AS network_id, NULL AS entity, ZSSID AS ssid,
+       ZAUTHFLAG AS auth_flag
+FROM ZNETWORK ORDER BY Z_PK ASC
+"#,
+    },
+];
+
+static BLUETOOTH_PAIRED: &[SqlVariant] = &[SqlVariant {
+    required_tables: &["PairedDevices"],
+    sql: r#"
+SELECT Uuid AS uuid, Name AS name, NameOrigin AS name_origin,
+       Address AS address, ResolvedAddress AS resolved_address,
+       LastSeenTime AS last_seen, LastConnectionTime AS last_connection
+FROM PairedDevices ORDER BY LastConnectionTime ASC
+"#,
+}];
+
+static SCREEN_TIME: &[SqlVariant] = &[
+    SqlVariant {
+        required_tables: &["ZSCREENTIMESETTINGS"],
+        sql: r#"
+SELECT Z_PK AS row_id, Z_OPT AS row_version, ZSCREENTIMEENABLED AS enabled,
+       ZCLOUDSYNCENABLED AS cloud_sync, ZFAMILYSETUPCOMPLETE AS family_setup
+FROM ZSCREENTIMESETTINGS ORDER BY Z_PK ASC
+"#,
+    },
+    SqlVariant {
+        required_tables: &["ZSCREENTIMESETTINGS"],
+        sql: r#"
+SELECT Z_PK AS row_id, Z_OPT AS row_version, ZSCREENTIMEENABLED AS enabled,
+       ZCLOUDSYNCENABLED AS cloud_sync, NULL AS family_setup
+FROM ZSCREENTIMESETTINGS ORDER BY Z_PK ASC
+"#,
+    },
+];
+
+pub static IOS_NOTES: SqlSpec = SqlSpec {
+    artifact: "ios_notes",
+    platform: "ios",
+    paths: &["**/NoteStore.sqlite"],
+    units: &[SqlUnit {
+        label: "note",
+        variants: NOTES,
+        time_column: Some("modified"),
+        time_kind: TimeKind::Cocoa,
+        key_columns: &["note_id"],
+        title_columns: &["title", "snippet", "folder"],
+    }],
+};
+
+pub static IOS_SAFARI_BOOKMARKS: SqlSpec = SqlSpec {
+    artifact: "ios_safari_bookmarks",
+    platform: "ios",
+    paths: &["**/Safari/Bookmarks.db"],
+    units: &[SqlUnit {
+        label: "bookmark",
+        variants: SAFARI_BOOKMARKS,
+        time_column: None,
+        time_kind: TimeKind::UnixSeconds,
+        key_columns: &["bookmark_id"],
+        title_columns: &["title", "url"],
+    }],
+};
+
+pub static IOS_SAFARI_TABS: SqlSpec = SqlSpec {
+    artifact: "ios_safari_tabs",
+    platform: "ios",
+    paths: &["**/Safari/SafariTabs.db"],
+    units: &[SqlUnit {
+        label: "tab",
+        variants: SAFARI_TABS,
+        time_column: None,
+        time_kind: TimeKind::UnixSeconds,
+        key_columns: &["tab_id"],
+        title_columns: &["title", "url"],
+    }],
+};
+
+pub static IOS_KEYBOARD: SqlSpec = SqlSpec {
+    artifact: "ios_keyboard",
+    platform: "ios",
+    paths: &["**/Keyboard/user_model_database.sqlite"],
+    units: &[SqlUnit {
+        label: "usage",
+        variants: KEYBOARD,
+        time_column: Some("creation_date"),
+        time_kind: TimeKind::UnixSeconds,
+        key_columns: &["record_id"],
+        title_columns: &["key", "value"],
+    }],
+};
+
+pub static IOS_VOICEMAIL: SqlSpec = SqlSpec {
+    artifact: "ios_voicemail",
+    platform: "ios",
+    paths: &["**/Voicemail/voicemail.db"],
+    units: &[SqlUnit {
+        label: "voicemail",
+        variants: VOICEMAIL,
+        time_column: Some("date"),
+        time_kind: TimeKind::UnixSeconds,
+        key_columns: &["voicemail_id"],
+        title_columns: &["sender", "receiver"],
+    }],
+};
+
+pub static IOS_WIFI_NETWORKS: SqlSpec = SqlSpec {
+    artifact: "ios_wifi_networks",
+    platform: "ios",
+    paths: &["**/WiFiNetworkStoreModel.sqlite"],
+    units: &[SqlUnit {
+        label: "network",
+        variants: WIFI_NETWORKS,
+        time_column: None,
+        time_kind: TimeKind::Cocoa,
+        key_columns: &["network_id"],
+        title_columns: &["ssid", "entity"],
+    }],
+};
+
+pub static IOS_BLUETOOTH: SqlSpec = SqlSpec {
+    artifact: "ios_bluetooth",
+    platform: "ios",
+    paths: &["**/com.apple.MobileBluetooth.ledevices.paired.db"],
+    units: &[SqlUnit {
+        label: "paired",
+        variants: BLUETOOTH_PAIRED,
+        time_column: None,
+        time_kind: TimeKind::Cocoa,
+        key_columns: &["uuid", "address"],
+        title_columns: &["name", "address"],
+    }],
+};
+
+pub static IOS_SCREEN_TIME: SqlSpec = SqlSpec {
+    artifact: "ios_screen_time",
+    platform: "ios",
+    paths: &["**/RMAdminStore-*.sqlite"],
+    units: &[SqlUnit {
+        label: "settings",
+        variants: SCREEN_TIME,
+        time_column: None,
+        time_kind: TimeKind::Cocoa,
+        key_columns: &["row_id"],
+        title_columns: &["row_id", "row_version"],
+    }],
+};
+
 pub static IOS_SPECS: &[&SqlSpec] = &[
     &IOS_MESSAGES,
     &IOS_CALLS,
@@ -416,4 +677,12 @@ pub static IOS_SPECS: &[&SqlSpec] = &[
     &IOS_WHATSAPP,
     &IOS_PHOTOS,
     &IOS_CALENDAR,
+    &IOS_NOTES,
+    &IOS_SAFARI_BOOKMARKS,
+    &IOS_SAFARI_TABS,
+    &IOS_KEYBOARD,
+    &IOS_VOICEMAIL,
+    &IOS_WIFI_NETWORKS,
+    &IOS_BLUETOOTH,
+    &IOS_SCREEN_TIME,
 ];
