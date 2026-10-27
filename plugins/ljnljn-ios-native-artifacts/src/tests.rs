@@ -446,6 +446,140 @@ fn screen_time_settings_read_flags() {
 }
 
 #[test]
+fn safari_downloads_read_history_plist() {
+    let root = Root::new("safari-downloads");
+    root.write(
+        "data/Containers/Data/Application/ABC/Library/Safari/Downloads/Downloads.plist",
+        r#"<?xml version="1.0" encoding="UTF-8"?>
+<plist version="1.0"><dict><key>DownloadHistory</key><array><dict>
+<key>DownloadEntryDateAddedKey</key><date>2024-01-01T00:00:00Z</date>
+<key>DownloadEntryURL</key><string>https://example.com/file.pdf</string>
+<key>DownloadEntryPath</key><string>/tmp/file.pdf</string>
+<key>DownloadEntryIdentifier</key><string>dl-1</string>
+</dict></array></dict></plist>
+"#,
+    );
+    let run = root.evidence("ios_safari_downloads");
+    let record = run.of_type("mobile.artifact")[0];
+    assert_eq!(record.text("time"), Some("2024-01-01T00:00:00Z"));
+    assert_eq!(
+        data(record, "url").and_then(Value::as_str),
+        Some("https://example.com/file.pdf")
+    );
+}
+
+#[test]
+fn safari_recent_searches_read_plist() {
+    let root = Root::new("safari-searches");
+    root.write(
+        "data/Library/Preferences/com.apple.mobilesafari.plist",
+        r#"<?xml version="1.0" encoding="UTF-8"?>
+<plist version="1.0"><dict><key>RecentWebSearches</key><array><dict>
+<key>Date</key><date>2024-01-01T00:00:00Z</date>
+<key>SearchString</key><string>forensics</string>
+</dict></array></dict></plist>
+"#,
+    );
+    let run = root.evidence("ios_safari_recent_searches");
+    let record = run.of_type("mobile.artifact")[0];
+    assert_eq!(record.text("time"), Some("2024-01-01T00:00:00Z"));
+    assert_eq!(
+        data(record, "search").and_then(Value::as_str),
+        Some("forensics")
+    );
+}
+
+#[test]
+fn photos_recent_searches_read_titles() {
+    let root = Root::new("photos-searches");
+    root.write(
+        "data/Media/PhotoData/Caches/search/RecentSearches.plist",
+        r#"<?xml version="1.0" encoding="UTF-8"?>
+<plist version="1.0"><array><dict>
+<key>SearchText</key><string>cat</string>
+<key>RepresentedObjects</key><array><dict><key>title</key><string>Cat</string></dict></array>
+</dict></array></plist>
+"#,
+    );
+    let run = root.evidence("ios_photos_recent_searches");
+    let record = run.of_type("mobile.artifact")[0];
+    assert_eq!(
+        data(record, "represented_object_titles").and_then(Value::as_str),
+        Some("Cat")
+    );
+}
+
+#[test]
+fn sms_reactions_read_reaction_rows() {
+    let root = Root::new("sms-reactions");
+    root.database(
+        "data/sms.db",
+        &format!(
+            "CREATE TABLE message(ROWID INTEGER PRIMARY KEY, guid TEXT, text TEXT, \
+             handle_id INTEGER, service TEXT, date INTEGER, is_from_me INTEGER, \
+             associated_message_type INTEGER, associated_message_guid TEXT);\
+             CREATE TABLE handle(ROWID INTEGER PRIMARY KEY, id TEXT);\
+             CREATE TABLE chat(ROWID INTEGER PRIMARY KEY, chat_identifier TEXT);\
+             CREATE TABLE chat_message_join(message_id INTEGER, chat_id INTEGER);\
+             INSERT INTO handle VALUES(1, '+8613800000000');\
+             INSERT INTO chat VALUES(1, '+8613800000000');\
+             INSERT INTO message VALUES(1, 'r1', 'Liked', 1, 'iMessage', {COCOA_2024}, 1, 2000, 'm1');\
+             INSERT INTO chat_message_join VALUES(1, 1);"
+        ),
+    );
+    let run = root.evidence("ios_sms_reactions");
+    assert_eq!(run.count("mobile.artifact"), 1);
+    assert_eq!(
+        data(run.of_type("mobile.artifact")[0], "reaction_type").and_then(Value::as_i64),
+        Some(2000)
+    );
+}
+
+#[test]
+fn sms_replies_read_target_guid() {
+    let root = Root::new("sms-replies");
+    root.database(
+        "data/sms.db",
+        &format!(
+            "CREATE TABLE message(ROWID INTEGER PRIMARY KEY, guid TEXT, text TEXT, \
+             handle_id INTEGER, service TEXT, date INTEGER, is_from_me INTEGER, thread_originator_guid TEXT);\
+             CREATE TABLE handle(ROWID INTEGER PRIMARY KEY, id TEXT);\
+             CREATE TABLE chat(ROWID INTEGER PRIMARY KEY, chat_identifier TEXT);\
+             CREATE TABLE chat_message_join(message_id INTEGER, chat_id INTEGER);\
+             INSERT INTO message VALUES(1, 'r1', 'reply', 1, 'iMessage', {COCOA_2024}, 1, 'origin-1');"
+        ),
+    );
+    let run = root.evidence("ios_sms_replies");
+    let record = run.of_type("mobile.artifact")[0];
+    assert_eq!(
+        data(record, "target_guid").and_then(Value::as_str),
+        Some("origin-1")
+    );
+}
+
+#[test]
+fn sms_recently_deleted_read_delete_date() {
+    let root = Root::new("sms-deleted");
+    root.database(
+        "data/sms.db",
+        &format!(
+            "CREATE TABLE message(ROWID INTEGER PRIMARY KEY, guid TEXT, text TEXT, \
+             handle_id INTEGER, service TEXT, date INTEGER, is_from_me INTEGER);\
+             CREATE TABLE handle(ROWID INTEGER PRIMARY KEY, id TEXT);\
+             CREATE TABLE chat(ROWID INTEGER PRIMARY KEY, chat_identifier TEXT);\
+             CREATE TABLE chat_recoverable_message_join(message_id INTEGER, chat_id INTEGER, \
+             delete_date INTEGER, ck_sync_state INTEGER);\
+             INSERT INTO message VALUES(1, 'r1', 'gone', 1, 'iMessage', {COCOA_2024}, 1);\
+             INSERT INTO chat_recoverable_message_join VALUES(1, 1, {COCOA_2024}, 0);"
+        ),
+    );
+    let run = root.evidence("ios_sms_recently_deleted");
+    let record = run.of_type("mobile.artifact")[0];
+    assert_eq!(record.text("time"), Some("2024-01-01T00:00:00Z"));
+    assert_eq!(data(record, "text").and_then(Value::as_str), Some("gone"));
+}
+
+#[test]
 fn selected_database_uses_the_files_scope() {
     let root = Root::new("selected");
     let path = message_fixture(&root);

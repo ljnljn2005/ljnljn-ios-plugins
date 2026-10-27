@@ -19,6 +19,12 @@
     "ios_wifi_networks",
     "ios_bluetooth",
     "ios_screen_time",
+    "ios_safari_downloads",
+    "ios_safari_recent_searches",
+    "ios_photos_recent_searches",
+    "ios_sms_reactions",
+    "ios_sms_replies",
+    "ios_sms_recently_deleted",
     "ios_selected_databases",
     "ios_selected_plist"
   ],

@@ -10,6 +10,7 @@
 //! report-import plugin until they are ported.
 
 mod device;
+mod plist_artifacts;
 mod specs;
 
 #[cfg(test)]
@@ -82,6 +83,30 @@ fn screen_time(run: &Run) -> Result<()> {
     run_evidence(run, &specs::IOS_SCREEN_TIME)
 }
 
+fn safari_downloads(run: &Run) -> Result<()> {
+    plist_artifacts::safari_downloads(run)
+}
+
+fn safari_recent_searches(run: &Run) -> Result<()> {
+    plist_artifacts::safari_recent_searches(run)
+}
+
+fn photos_recent_searches(run: &Run) -> Result<()> {
+    plist_artifacts::photos_recent_searches(run)
+}
+
+fn sms_reactions(run: &Run) -> Result<()> {
+    run_evidence(run, &specs::IOS_SMS_REACTIONS)
+}
+
+fn sms_replies(run: &Run) -> Result<()> {
+    run_evidence(run, &specs::IOS_SMS_REPLIES)
+}
+
+fn sms_recently_deleted(run: &Run) -> Result<()> {
+    run_evidence(run, &specs::IOS_SMS_RECENTLY_DELETED)
+}
+
 fn selected_databases(run: &Run) -> Result<()> {
     mobile_core::run_files(run, specs::IOS_SPECS)
 }
@@ -110,6 +135,12 @@ fn plugin() -> Plugin {
         .analyzer("ios_wifi_networks", wifi_networks)
         .analyzer("ios_bluetooth", bluetooth)
         .analyzer("ios_screen_time", screen_time)
+        .analyzer("ios_safari_downloads", safari_downloads)
+        .analyzer("ios_safari_recent_searches", safari_recent_searches)
+        .analyzer("ios_photos_recent_searches", photos_recent_searches)
+        .analyzer("ios_sms_reactions", sms_reactions)
+        .analyzer("ios_sms_replies", sms_replies)
+        .analyzer("ios_sms_recently_deleted", sms_recently_deleted)
         .analyzer("ios_selected_databases", selected_databases)
         .analyzer("ios_selected_plist", selected_plist)
 }

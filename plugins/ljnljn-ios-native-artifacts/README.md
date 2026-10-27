@@ -27,6 +27,12 @@ LovelyCarve **LPP v2** 插件：直接读取 iOS 完整文件系统提取物中�
 | `ios_wifi_networks` | `WiFiNetworkStoreModel.sqlite` | SSID、实体名、认证标志 |
 | `ios_bluetooth` | `com.apple.MobileBluetooth.ledevices.paired.db` | 设备名、地址、最后连接/发现时间 |
 | `ios_screen_time` | `RMAdminStore-*.sqlite` | 屏幕时间、云同步、家庭设置标志 |
+| `ios_safari_downloads` | `Safari/Downloads/Downloads.plist` | URL、路径、字节数、标识、添加时间 |
+| `ios_safari_recent_searches` | `com.apple.mobilesafari.plist` | 搜索词、搜索时间 |
+| `ios_photos_recent_searches` | `PhotoData/Caches/search/RecentSearches.plist` | 搜索词、关联对象标题 |
+| `ios_sms_reactions` | `sms.db` | 回应类型、目标消息、发送者、聊天、时间 |
+| `ios_sms_replies` | `sms.db` | 回复正文、被引用消息 GUID、聊天、时间 |
+| `ios_sms_recently_deleted` | `sms.db` | 删除时间、消息时间、正文、聊天、同步状态 |
 
 另有 `ios_selected_databases`（手动选数据库）和 `ios_selected_plist`
 （手动选 plist）。

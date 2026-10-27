@@ -121,6 +121,48 @@ trigger = "manual"
 category = "ios"
 
 [[analyzer]]
+id = "ios_safari_downloads"
+name = "Safari 下载记录（检材）"
+scope = "evidence"
+trigger = "manual"
+category = "ios"
+
+[[analyzer]]
+id = "ios_safari_recent_searches"
+name = "Safari 最近搜索（检材）"
+scope = "evidence"
+trigger = "manual"
+category = "ios"
+
+[[analyzer]]
+id = "ios_photos_recent_searches"
+name = "照片最近搜索（检材）"
+scope = "evidence"
+trigger = "manual"
+category = "ios"
+
+[[analyzer]]
+id = "ios_sms_reactions"
+name = "短信回应/表情（检材）"
+scope = "evidence"
+trigger = "manual"
+category = "ios"
+
+[[analyzer]]
+id = "ios_sms_replies"
+name = "短信回复引用（检材）"
+scope = "evidence"
+trigger = "manual"
+category = "ios"
+
+[[analyzer]]
+id = "ios_sms_recently_deleted"
+name = "最近删除短信（检材）"
+scope = "evidence"
+trigger = "manual"
+category = "ios"
+
+[[analyzer]]
 id = "ios_selected_databases"
 name = "iOS 数据库（单文件）"
 scope = "files"

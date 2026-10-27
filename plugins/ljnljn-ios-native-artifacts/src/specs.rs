@@ -669,6 +669,138 @@ pub static IOS_SCREEN_TIME: SqlSpec = SqlSpec {
     }],
 };
 
+static SMS_REACTIONS: &[SqlVariant] = &[
+    SqlVariant {
+        required_tables: &["message", "handle", "chat", "chat_message_join"],
+        sql: r#"
+SELECT m.ROWID AS message_id, m.guid AS guid, m.date AS date,
+       m.is_from_me AS is_from_me,
+       CASE WHEN m.is_from_me = 0 THEN h.id END AS sender,
+       c.chat_identifier AS chat, m.associated_message_type AS reaction_type,
+       m.associated_message_guid AS target_guid, m.service AS service
+FROM message m
+LEFT JOIN handle h ON h.ROWID = m.handle_id
+LEFT JOIN chat_message_join cmj ON cmj.message_id = m.ROWID
+LEFT JOIN chat c ON c.ROWID = cmj.chat_id
+WHERE m.associated_message_type = 1000
+   OR m.associated_message_type BETWEEN 2000 AND 3007
+ORDER BY m.date ASC, m.ROWID ASC
+"#,
+    },
+    SqlVariant {
+        required_tables: &["message"],
+        sql: r#"
+SELECT ROWID AS message_id, guid AS guid, date AS date,
+       is_from_me AS is_from_me, NULL AS sender, NULL AS chat,
+       associated_message_type AS reaction_type,
+       associated_message_guid AS target_guid, service AS service
+FROM message
+WHERE associated_message_type = 1000
+   OR associated_message_type BETWEEN 2000 AND 3007
+ORDER BY date ASC, ROWID ASC
+"#,
+    },
+];
+
+static SMS_REPLIES: &[SqlVariant] = &[
+    SqlVariant {
+        required_tables: &["message", "handle", "chat", "chat_message_join"],
+        sql: r#"
+SELECT m.ROWID AS message_id, m.guid AS guid, m.date AS date,
+       m.is_from_me AS is_from_me, m.text AS text,
+       m.thread_originator_guid AS target_guid, h.id AS sender,
+       c.chat_identifier AS chat, m.service AS service
+FROM message m
+LEFT JOIN handle h ON h.ROWID = m.handle_id
+LEFT JOIN chat_message_join cmj ON cmj.message_id = m.ROWID
+LEFT JOIN chat c ON c.ROWID = cmj.chat_id
+WHERE m.thread_originator_guid IS NOT NULL AND m.thread_originator_guid != ''
+ORDER BY m.date ASC, m.ROWID ASC
+"#,
+    },
+    SqlVariant {
+        required_tables: &["message"],
+        sql: r#"
+SELECT ROWID AS message_id, guid AS guid, date AS date,
+       is_from_me AS is_from_me, text AS text,
+       thread_originator_guid AS target_guid, NULL AS sender,
+       NULL AS chat, service AS service
+FROM message
+WHERE thread_originator_guid IS NOT NULL AND thread_originator_guid != ''
+ORDER BY date ASC, ROWID ASC
+"#,
+    },
+];
+
+static SMS_RECENTLY_DELETED: &[SqlVariant] = &[
+    SqlVariant {
+        required_tables: &["chat_recoverable_message_join", "message", "handle", "chat"],
+        sql: r#"
+SELECT r.delete_date AS deleted_date, m.ROWID AS message_id, m.guid AS guid,
+       m.date AS date, m.text AS text, m.is_from_me AS is_from_me,
+       h.id AS sender, c.chat_identifier AS chat, r.ck_sync_state AS sync_state
+FROM chat_recoverable_message_join r
+JOIN message m ON m.ROWID = r.message_id
+LEFT JOIN handle h ON h.ROWID = m.handle_id
+LEFT JOIN chat c ON c.ROWID = r.chat_id
+ORDER BY r.delete_date ASC, m.ROWID ASC
+"#,
+    },
+    SqlVariant {
+        required_tables: &["chat_recoverable_message_join", "message"],
+        sql: r#"
+SELECT r.delete_date AS deleted_date, m.ROWID AS message_id, m.guid AS guid,
+       m.date AS date, m.text AS text, m.is_from_me AS is_from_me,
+       NULL AS sender, NULL AS chat, NULL AS sync_state
+FROM chat_recoverable_message_join r
+JOIN message m ON m.ROWID = r.message_id
+ORDER BY r.delete_date ASC, m.ROWID ASC
+"#,
+    },
+];
+
+pub static IOS_SMS_REACTIONS: SqlSpec = SqlSpec {
+    artifact: "ios_sms_reactions",
+    platform: "ios",
+    paths: &["**/sms.db"],
+    units: &[SqlUnit {
+        label: "reaction",
+        variants: SMS_REACTIONS,
+        time_column: Some("date"),
+        time_kind: TimeKind::Cocoa,
+        key_columns: &["message_id", "guid"],
+        title_columns: &["chat", "sender", "reaction_type"],
+    }],
+};
+
+pub static IOS_SMS_REPLIES: SqlSpec = SqlSpec {
+    artifact: "ios_sms_replies",
+    platform: "ios",
+    paths: &["**/sms.db"],
+    units: &[SqlUnit {
+        label: "reply",
+        variants: SMS_REPLIES,
+        time_column: Some("date"),
+        time_kind: TimeKind::Cocoa,
+        key_columns: &["message_id", "guid"],
+        title_columns: &["text", "chat"],
+    }],
+};
+
+pub static IOS_SMS_RECENTLY_DELETED: SqlSpec = SqlSpec {
+    artifact: "ios_sms_recently_deleted",
+    platform: "ios",
+    paths: &["**/sms.db"],
+    units: &[SqlUnit {
+        label: "deleted",
+        variants: SMS_RECENTLY_DELETED,
+        time_column: Some("deleted_date"),
+        time_kind: TimeKind::Cocoa,
+        key_columns: &["message_id", "guid"],
+        title_columns: &["text", "chat"],
+    }],
+};
+
 pub static IOS_SPECS: &[&SqlSpec] = &[
     &IOS_MESSAGES,
     &IOS_CALLS,
@@ -685,4 +817,7 @@ pub static IOS_SPECS: &[&SqlSpec] = &[
     &IOS_WIFI_NETWORKS,
     &IOS_BLUETOOTH,
     &IOS_SCREEN_TIME,
+    &IOS_SMS_REACTIONS,
+    &IOS_SMS_REPLIES,
+    &IOS_SMS_RECENTLY_DELETED,
 ];
