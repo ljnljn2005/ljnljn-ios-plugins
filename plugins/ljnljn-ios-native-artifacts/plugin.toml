@@ -1,0 +1,81 @@
+# LPP v2 package manifest. Labels are the Chinese defaults; translations live
+# in locales/<locale>.toml under stable keys.
+id = "org.ljnljn.ios-native-artifacts"
+name = "iOS 原生工件"
+version = "0.1.0"
+protocol = 2
+library = "ljnljn_ios_native_artifacts"
+memory = "512MiB"
+permissions = ["file_materialize"]
+
+[[analyzer]]
+id = "ios_device_info"
+name = "设备与备份信息（检材）"
+scope = "evidence"
+trigger = "manual"
+category = "ios"
+
+[[analyzer]]
+id = "ios_messages"
+name = "短信与 iMessage（检材）"
+scope = "evidence"
+trigger = "manual"
+category = "ios"
+
+[[analyzer]]
+id = "ios_calls"
+name = "通话记录（检材）"
+scope = "evidence"
+trigger = "manual"
+category = "ios"
+
+[[analyzer]]
+id = "ios_contacts"
+name = "通讯录（检材）"
+scope = "evidence"
+trigger = "manual"
+category = "ios"
+
+[[analyzer]]
+id = "ios_safari_history"
+name = "Safari 历史（检材）"
+scope = "evidence"
+trigger = "manual"
+category = "ios"
+
+[[analyzer]]
+id = "ios_whatsapp"
+name = "WhatsApp 消息（检材）"
+scope = "evidence"
+trigger = "manual"
+category = "ios"
+
+[[analyzer]]
+id = "ios_photos"
+name = "照片元数据（检材）"
+scope = "evidence"
+trigger = "manual"
+category = "ios"
+
+[[analyzer]]
+id = "ios_calendar"
+name = "日历事件（检材）"
+scope = "evidence"
+trigger = "manual"
+category = "ios"
+
+[[analyzer]]
+id = "ios_selected_databases"
+name = "iOS 数据库（单文件）"
+scope = "files"
+trigger = "manual"
+category = "ios"
+extensions = ["db", "sqlite", "storedata", "sqlitedb"]
+
+[[analyzer]]
+id = "ios_selected_plist"
+name = "设备/备份 plist（单文件）"
+scope = "files"
+trigger = "manual"
+category = "ios"
+extensions = ["plist"]
